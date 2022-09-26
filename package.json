@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "md5": "^2.3.0",
+    "octokit": "^2.0.7",
     "simple-git": "^3.14.1"
   },
   "devDependencies": {
