@@ -1,7 +1,7 @@
 {
   "name": "@hongbusi/contributors",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "packageManager": "pnpm@7.12.0",
   "description": "Generate a list of contributors to your GitHub repository.",
   "author": "Hongbusi",
