@@ -10,10 +10,43 @@ interface Repository {
   }
 }
 
-interface GraphQLResponse {
+interface SearchResponse {
   search: {
     repositoryCount: number
     edges: Record<'node', Repository>[]
+  }
+}
+
+interface SearchResultRepository {
+  name: string
+  defaultBranch: string
+}
+
+interface SearchResult {
+  repositoryCount: number
+  repositories: SearchResultRepository[]
+}
+
+interface RepositoryCommits {
+  history: {
+    nodes: {
+      oid: string
+      author: {
+        avatarUrl: string
+        email: string
+        name: string
+      }
+    }
+    pageInfo: {
+      hasNextPage: boolean
+      endCUrsor: string
+    }
+  }
+}
+
+interface RepositoryResponse {
+  repository: {
+    object: RepositoryCommits[]
   }
 }
 
@@ -22,7 +55,7 @@ const octokit = new Octokit({
   auth: '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'
 })
 
-const searchRepositories = async (name: string) => {
+const searchRepositories = async (name: string): Promise<SearchResult> => {
   const query = `{
     search(query: "user:${name}", type: REPOSITORY, first: 100) {
       repositoryCount
@@ -40,7 +73,7 @@ const searchRepositories = async (name: string) => {
   }`
 
   // eslint-disable-next-line prefer-const
-  let { repositoryCount, edges } = (await octokit.graphql<GraphQLResponse>(query)).search
+  let { repositoryCount, edges } = (await octokit.graphql<SearchResponse>(query)).search
 
   const repositories = edges.filter((i) => {
     if (!i.node.defaultBranchRef) {
@@ -80,7 +113,9 @@ const fetchCommits = async (owner: string, name: string, branch: string) => {
     }
   }`
 
-  const response = (await octokit.graphql(query)).repository.object
+  const response = (await octokit.graphql<RepositoryResponse>(query)).repository.object
+
+  return response
 }
 
 export async function getOrganizationContributors(name: string) {
@@ -93,7 +128,7 @@ export async function getOrganizationContributors(name: string) {
   spinner.start('Fetching contributors...')
 
   do {
-    const repository = repositories.shift()
+    const repository = repositories.shift() as SearchResultRepository
     spinner.text = `Fetching ${repository.name} contributors... (${repositoryCount - repositories.length}/${repositoryCount})`
     await fetchCommits(name, repository.name, repository.defaultBranch)
   } while (repositories.length > 0)
