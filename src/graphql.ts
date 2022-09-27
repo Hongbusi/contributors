@@ -51,7 +51,7 @@ interface RepositoryResponse {
 
 const octokit = new Octokit({
   // auth: process.env.GITHUB_TOKEN
-  auth: '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'
+  auth: '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'
 })
 
 const searchRepositories = async (name: string): Promise<SearchResult> => {
