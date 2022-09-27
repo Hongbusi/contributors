@@ -1,7 +1,6 @@
 import { Octokit } from 'octokit'
 import ora from 'ora'
 import chalk from 'chalk'
-import consola from 'consola'
 
 interface Repository {
   name: string
@@ -27,32 +26,32 @@ interface SearchResult {
   repositories: SearchResultRepository[]
 }
 
-interface RepositoryCommits {
-  history: {
-    nodes: {
-      oid: string
-      author: {
-        avatarUrl: string
-        email: string
-        name: string
-      }
-    }
-    pageInfo: {
-      hasNextPage: boolean
-      endCUrsor: string
-    }
+interface RepositoryCommit {
+  oid: string
+  author: {
+    avatarUrl: string
+    email: string
+    name: string
   }
 }
 
 interface RepositoryResponse {
   repository: {
-    object: RepositoryCommits[]
+    object: {
+      history: {
+        nodes: RepositoryCommit[]
+        pageInfo: {
+          hasNextPage: boolean
+          endCursor: string
+        }
+      }
+    }
   }
 }
 
 const octokit = new Octokit({
   // auth: process.env.GITHUB_TOKEN
-  auth: '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'
+  auth: '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'
 })
 
 const searchRepositories = async (name: string): Promise<SearchResult> => {
@@ -89,12 +88,12 @@ const searchRepositories = async (name: string): Promise<SearchResult> => {
   }
 }
 
-const fetchCommits = async (owner: string, name: string, branch: string) => {
+const fetchCommits = async (owner: string, name: string, branch: string, after: undefined | string) => {
   const query = `{
     repository(owner: "${owner}", name: "${name}") {
       object(expression: "${branch}") {
         ... on Commit {
-          history {
+          history${after ? `(after: "${after}")` : ''} {
             nodes {
               oid
               author {
@@ -112,9 +111,7 @@ const fetchCommits = async (owner: string, name: string, branch: string) => {
       }
     }
   }`
-
-  const response = (await octokit.graphql<RepositoryResponse>(query)).repository.object
-
+  const response = (await octokit.graphql<RepositoryResponse>(query)).repository.object.history
   return response
 }
 
@@ -127,13 +124,37 @@ export async function getOrganizationContributors(name: string) {
 
   spinner.start('Fetching contributors...')
 
+  const map: Record<string, any> = {}
+
   do {
     const repository = repositories.shift() as SearchResultRepository
     spinner.text = `Fetching ${repository.name} contributors... (${repositoryCount - repositories.length}/${repositoryCount})`
-    await fetchCommits(name, repository.name, repository.defaultBranch)
+
+    let endCursor
+    do {
+      const result = await fetchCommits(name, repository.name, repository.defaultBranch, endCursor)
+
+      result.nodes
+        .filter(i => i.author.email)
+        .forEach((i) => {
+          const { author: { email, avatarUrl, name } } = i
+          if (!map[name]) {
+            map[email] = {
+              avatarUrl,
+              name,
+              count: 0
+            }
+          }
+          map[email].count++
+        })
+
+      endCursor = result.pageInfo.hasNextPage ? result.pageInfo.endCursor : undefined
+    } while (endCursor)
   } while (repositories.length > 0)
 
   spinner.succeed(chalk.green('Fetched contributors success.'))
+
+  return Object.values(map).sort((a, b) => b.count - a.count)
 }
 
 getOrganizationContributors('developer-plus')

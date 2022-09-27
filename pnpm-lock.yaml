@@ -9,7 +9,6 @@ importers:
       '@types/node': ^18.7.18
       bumpp: ^8.2.1
       chalk: ^5.0.1
-      consola: ^2.15.3
       eslint: ^8.23.1
       esno: ^0.16.3
       md5: ^2.3.0
@@ -24,7 +23,6 @@ importers:
       vitest: ^0.23.4
     dependencies:
       chalk: 5.0.1
-      consola: 2.15.3
       md5: 2.3.0
       octokit: 2.0.7
       ora: 6.1.2
@@ -1426,6 +1424,7 @@ packages:
 
   /consola/2.15.3:
     resolution: {integrity: sha512-9vAdYbHj6x2fLKC4+oPH0kFzY/orMZyG2Aj+kNylHxKGJ/Ed4dpNyAQYwJOdqO4zdM7XpVHmyejQDcQHrnuXbw==}
+    dev: true
 
   /convert-source-map/1.8.0:
     resolution: {integrity: sha512-+OQdjP49zViI/6i7nIJpA8rAl4sV/JdPfU9nZs3VqOwGIgizICvuN2ru6fMd+4llL0tar18UYJXfZ/TWtmhUjA==}
